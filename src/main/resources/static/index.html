@@ -4,19 +4,122 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Dear, Seoul</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Monsieur+La+Doulaise&family=Noto+Serif+KR:wght@400;500&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<canvas id="cloud" aria-label="작품과 사진이 떠다니는 화면" hidden></canvas>
-<div id="space" hidden><div id="stage"></div></div>
-<header id="top"><span></span><button id="mark" type="button">Dear, Seoul</button><span></span></header>
-<main id="ui"></main>
-<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<div id="loading" role="dialog" aria-modal="true" aria-labelledby="loadingTitle" aria-describedby="loadingHint" tabindex="-1" hidden>
+ <div class="loading-card"><span class="loading-spinner" aria-hidden="true"></span><h2 id="loadingTitle" role="status" aria-live="polite">잠시만 기다려주세요.</h2><p id="loadingHint">요청을 처리하고 있어요.</p></div>
+</div>
+<div id="status" role="alert" hidden></div>
+<div id="wall"></div>
+<header id="top" hidden><span class="logo">Dear. Seoul</span><ol id="steps"><li>① 취향 선택</li><li>② 편지 고르기</li><li>③ 위치 확인하기</li><li>④ 읽기</li></ol><button class="home" id="home" type="button">처음으로</button></header>
+
+<section class="scene" id="s-start">
+  <div class="stage">
+    <p class="word dear">Dear</p>
+    <p class="word seoul">Seoul</p>
+    <div class="mailbox" id="mb">
+      <img class="peek" id="peek" src="assets/envelope-cupid.jpg" alt="">
+      <img class="mb-img" src="assets/mailbox.png" alt="분홍 우체통">
+      <div class="hole"><img class="folder" id="folder" src="assets/folder.png" alt=""><button class="folder-hit" id="folderHit" type="button" aria-label="편지 꺼내기" hidden></button></div>
+      <div class="door" id="door"><i class="dfront"></i><i class="dback"></i></div>
+      <button class="hit slot" id="slot" type="button" aria-label="편지함을 눌러 편지 쓰기"></button>
+      <button class="hit key" id="key" type="button" aria-label="열쇠 구멍을 눌러 편지 받기"></button>
+    </div>
+    <p class="hint h-write" id="hWrite"><b>편지함</b>을 눌러 누군가를 위한 편지를 작성해보세요.</p>
+    <p class="hint h-key" id="hKey"></p>
+    <button class="seal-btn begin" id="begin" type="button">시작하기</button>
+  </div>
+</section>
+
+<section class="scene" id="s-taste" hidden>
+  <div id="tview"><canvas id="tnet" aria-hidden="true"></canvas><div id="tworld"></div></div>
+  <div class="tstage" id="tstage">
+    <p class="hint thint">끌리는 작품 <b>3개 이상</b>에 별점을 남겨주세요.</p>
+    <section class="tdetail" id="detail" role="dialog" aria-modal="true" aria-labelledby="dName" tabindex="-1" hidden>
+      <img id="dImg" alt="">
+      <div class="dcat" id="dCat"></div>
+      <div class="dname" id="dName"></div>
+      <div class="dstars" id="dStars" role="group" aria-label="별점"></div>
+      <div class="dacts"><button type="button" id="cl">닫기</button><button type="button" id="rm" hidden>지우기</button><button type="button" id="ok">저장</button></div>
+    </section>
+    <div class="tdock" id="dock">
+      <label class="free"><span>남기고 싶은 말 (선택)</span><input id="mood" maxlength="80" placeholder="요즘 기분이나 하고 싶은 것을 자유롭게 적어보세요"></label>
+      <label class="area"><span>지역 (선택)</span><select id="gu"></select></label>
+      <button class="plain" id="addBtn" type="button">+ 직접 쓰기</button>
+      <span id="count">0/3</span><button class="seal-btn" id="go" type="button" disabled>편지 받기</button>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="s-pick" hidden>
+  <h2 class="pick-h">당신에게 도착한 편지</h2>
+  <div id="papers"></div>
+  <p class="caption" id="pickCap"></p>
+</section>
+
+<section class="scene" id="s-map" hidden>
+  <div class="mapwrap" id="mapwrap"><img src="assets/map-paper.png" alt=""><svg id="map" role="img" aria-label="서울 25개 구 지도"></svg><button class="pill" id="allBtn" type="button">서울 전체 보기</button><p class="toast" id="toast" hidden></p></div>
+  <aside class="slip" id="slip"></aside>
+</section>
+
+<section class="scene" id="s-paper" hidden>
+  <div class="pstage" id="pstage">
+    <img class="lfolder" src="assets/letter-folder.webp" alt="">
+    <div id="ppapers"></div>
+    <p class="hint phint">마음에 드는 편지지를 선택해주세요.</p>
+  </div>
+</section>
+
+<section class="scene wscroll" id="s-compose" hidden>
+  <form class="wsheet" id="wform" novalidate>
+    <img class="wpaper" id="wImg" alt="">
+    <div class="wbody">
+      <p class="to">Dear. 익명<input id="wTo" value="익명" hidden></p>
+      <div class="wf"><label for="wBody">편지 내용*</label><textarea id="wBody" aria-describedby="wm" maxlength="400" rows="5" placeholder="입력하세요."></textarea></div>
+      <div class="wf"><label for="wPlace">우체통</label><select id="wPlace"></select></div>
+      <div class="wf"><label for="wWorks">함께한 작품 (선택)</label><select id="wCat"><option value="music">음악</option><option value="film">영화</option><option value="drama">드라마</option></select><input id="wWorks" aria-describedby="wm" maxlength="120"></div>
+      <p class="warn" id="wm" role="alert" aria-live="assertive" hidden></p>
+      <div class="wacts"><button class="plain" id="wBack" type="button">이전</button><button class="seal-btn" type="submit">다음</button></div>
+    </div>
+  </form>
+</section>
+
+<section class="scene wscroll" id="s-send" hidden>
+  <form class="wsheet" id="sform">
+    <img class="wpaper" id="sImg" alt="">
+    <div class="wbody">
+      <p class="to"><span>Dear.</span> <b id="sTo"></b></p>
+      <div id="reviewResult" aria-live="polite"></div><fieldset class="mails"><legend>맡길 우체통</legend><div id="mails"></div></fieldset>
+      <div class="wacts"><button class="plain" id="sBack" type="button">편지 수정</button><button class="seal-btn" id="sGo" type="submit" disabled>보내기</button></div>
+    </div>
+  </form>
+</section>
+
+<section class="scene" id="s-done" hidden>
+  <div class="sent"><p class="done-b">Dear. Seoul</p><h2>마음을 맡겼습니다.</h2><p id="sentT"></p><div class="pad-row"><button class="seal-btn" id="sentNew" type="button">새 편지 쓰기</button><button class="plain" id="sentGo" type="button">편지 받으러 가기</button><button class="plain" id="sentHome" type="button">처음으로</button></div></div>
+</section>
+
+<div id="lt" hidden>
+  <div class="sheet" id="sheet">
+    <p class="to"><span>Dear.</span> 익명</p>
+    <p class="from"><b id="rdP"></b>에서 온 편지</p>
+    <div class="body" id="artB"></div>
+    <div class="extra" id="rdMore"><h4>따라 해보기</h4><p id="rdC"></p><h4>보낸이가 좋아한 작품</h4><div id="rdW"></div></div>
+    <div class="acts" id="ltFoot"></div>
+  </div>
+  <button class="x" id="ltX" type="button" aria-label="편지 접기">×</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/DrawSVGPlugin.min.js"></script>
+<script src="motion.js"></script>
+
+
+
 <script type="module" src="app.js"></script>
 </body>
 </html>
