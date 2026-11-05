@@ -1,0 +1,42 @@
+-- Source: melon-top10.json
+-- Insert only missing IDs; preserve existing rows on restart.
+
+INSERT INTO catalog_content (id, type, title, tag, source_name, source_id, ranking_position, artist, album, channel, image_url, source_json)
+SELECT 'melon-603382333', 'MUSIC', 'NEON', 'comfort', 'MELON', '603382333', 1, 'A2O, A2O LITE', 'NEON', NULL, 'https://cdnimg.melon.co.kr/cm2/album/images/146/44/795/14644795_20261012141441_500.jpg', '{"metadata":{"file":"melon-top10.json","source":"Melon TOP 100 - top 10 songs (via melona)","sourceUrl":"https://www.melon.com/chart/index.htm","fetchedAt":"2026-11-05T18:36:05.910Z","count":10},"item":{"songNo":603382333,"rank":1,"title":"NEON","artist":"A2O, A2O LITE","album":"NEON","likeCnt":64022,"albumImg":"https://cdnimg.melon.co.kr/cm2/album/images/146/44/795/14644795_20261012141441_500.jpg"}}'
+WHERE NOT EXISTS (SELECT 1 FROM catalog_content WHERE id = 'melon-603382333');
+
+INSERT INTO catalog_content (id, type, title, tag, source_name, source_id, ranking_position, artist, album, channel, image_url, source_json)
+SELECT 'melon-603712834', 'MUSIC', 'With', 'comfort', 'MELON', '603712834', 2, 'RESCENE (리센느)', 'PULSE', NULL, 'https://cdnimg.melon.co.kr/cm2/album/images/150/82/293/15082293_20261026170443_500.jpg', '{"metadata":{"file":"melon-top10.json","source":"Melon TOP 100 - top 10 songs (via melona)","sourceUrl":"https://www.melon.com/chart/index.htm","fetchedAt":"2026-11-05T18:36:05.910Z","count":10},"item":{"songNo":603712834,"rank":2,"title":"With","artist":"RESCENE (리센느)","album":"PULSE","likeCnt":54990,"albumImg":"https://cdnimg.melon.co.kr/cm2/album/images/150/82/293/15082293_20261026170443_500.jpg"}}'
+WHERE NOT EXISTS (SELECT 1 FROM catalog_content WHERE id = 'melon-603712834');
+
+INSERT INTO catalog_content (id, type, title, tag, source_name, source_id, ranking_position, artist, album, channel, image_url, source_json)
+SELECT 'melon-602290711', 'MUSIC', '꿈꾸던 어른이 되었나요?', 'comfort', 'MELON', '602290711', 3, '머무르', '꿈꾸던 어른이 되었나요?', NULL, 'https://cdnimg.melon.co.kr/cm2/album/images/137/44/621/13744621_20260617115134_500.jpg', '{"metadata":{"file":"melon-top10.json","source":"Melon TOP 100 - top 10 songs (via melona)","sourceUrl":"https://www.melon.com/chart/index.htm","fetchedAt":"2026-11-05T18:36:05.910Z","count":10},"item":{"songNo":602290711,"rank":3,"title":"꿈꾸던 어른이 되었나요?","artist":"머무르","album":"꿈꾸던 어른이 되었나요?","likeCnt":60278,"albumImg":"https://cdnimg.melon.co.kr/cm2/album/images/137/44/621/13744621_20260617115134_500.jpg"}}'
+WHERE NOT EXISTS (SELECT 1 FROM catalog_content WHERE id = 'melon-602290711');
+
+INSERT INTO catalog_content (id, type, title, tag, source_name, source_id, ranking_position, artist, album, channel, image_url, source_json)
+SELECT 'melon-602862199', 'MUSIC', '퇴사할게여 (Narr. 기안84)', 'comfort', 'MELON', '602862199', 4, '소연 (SOYEON)', '끝내주는 인생', NULL, 'https://cdnimg.melon.co.kr/cm2/album/images/144/70/302/14470302_20260907113632_500.jpg', '{"metadata":{"file":"melon-top10.json","source":"Melon TOP 100 - top 10 songs (via melona)","sourceUrl":"https://www.melon.com/chart/index.htm","fetchedAt":"2026-11-05T18:36:05.910Z","count":10},"item":{"songNo":602862199,"rank":4,"title":"퇴사할게여 (Narr. 기안84)","artist":"소연 (SOYEON)","album":"끝내주는 인생","likeCnt":60415,"albumImg":"https://cdnimg.melon.co.kr/cm2/album/images/144/70/302/14470302_20260907113632_500.jpg"}}'
+WHERE NOT EXISTS (SELECT 1 FROM catalog_content WHERE id = 'melon-602862199');
+
+INSERT INTO catalog_content (id, type, title, tag, source_name, source_id, ranking_position, artist, album, channel, image_url, source_json)
+SELECT 'melon-37928381', 'MUSIC', 'LOVE ATTACK', 'comfort', 'MELON', '37928381', 5, 'RESCENE (리센느)', 'SCENEDROME', NULL, 'https://cdnimg.melon.co.kr/cm2/album/images/115/75/849/11575849_20240826152240_500.jpg', '{"metadata":{"file":"melon-top10.json","source":"Melon TOP 100 - top 10 songs (via melona)","sourceUrl":"https://www.melon.com/chart/index.htm","fetchedAt":"2026-11-05T18:36:05.910Z","count":10},"item":{"songNo":37928381,"rank":5,"title":"LOVE ATTACK","artist":"RESCENE (리센느)","album":"SCENEDROME","likeCnt":170193,"albumImg":"https://cdnimg.melon.co.kr/cm2/album/images/115/75/849/11575849_20240826152240_500.jpg"}}'
+WHERE NOT EXISTS (SELECT 1 FROM catalog_content WHERE id = 'melon-37928381');
+
+INSERT INTO catalog_content (id, type, title, tag, source_name, source_id, ranking_position, artist, album, channel, image_url, source_json)
+SELECT 'melon-603709840', 'MUSIC', '체포하겠어', 'comfort', 'MELON', '603709840', 6, '아일릿(ILLIT)', 'BREAK EVEN', NULL, 'https://cdnimg.melon.co.kr/cm2/album/images/150/81/373/15081373_20261026102240_500.jpg', '{"metadata":{"file":"melon-top10.json","source":"Melon TOP 100 - top 10 songs (via melona)","sourceUrl":"https://www.melon.com/chart/index.htm","fetchedAt":"2026-11-05T18:36:05.910Z","count":10},"item":{"songNo":603709840,"rank":6,"title":"체포하겠어","artist":"아일릿(ILLIT)","album":"BREAK EVEN","likeCnt":24606,"albumImg":"https://cdnimg.melon.co.kr/cm2/album/images/150/81/373/15081373_20261026102240_500.jpg"}}'
+WHERE NOT EXISTS (SELECT 1 FROM catalog_content WHERE id = 'melon-603709840');
+
+INSERT INTO catalog_content (id, type, title, tag, source_name, source_id, ranking_position, artist, album, channel, image_url, source_json)
+SELECT 'melon-603712835', 'MUSIC', '백화요란 (Inside Out)', 'comfort', 'MELON', '603712835', 7, 'RESCENE (리센느)', 'PULSE', NULL, 'https://cdnimg.melon.co.kr/cm2/album/images/150/82/293/15082293_20261026170443_500.jpg', '{"metadata":{"file":"melon-top10.json","source":"Melon TOP 100 - top 10 songs (via melona)","sourceUrl":"https://www.melon.com/chart/index.htm","fetchedAt":"2026-11-05T18:36:05.910Z","count":10},"item":{"songNo":603712835,"rank":7,"title":"백화요란 (Inside Out)","artist":"RESCENE (리센느)","album":"PULSE","likeCnt":33493,"albumImg":"https://cdnimg.melon.co.kr/cm2/album/images/150/82/293/15082293_20261026170443_500.jpg"}}'
+WHERE NOT EXISTS (SELECT 1 FROM catalog_content WHERE id = 'melon-603712835');
+
+INSERT INTO catalog_content (id, type, title, tag, source_name, source_id, ranking_position, artist, album, channel, image_url, source_json)
+SELECT 'melon-39231685', 'MUSIC', 'Deja Vu', 'comfort', 'MELON', '39231685', 8, 'RESCENE (리센느)', 'Dearest', NULL, 'https://cdnimg.melon.co.kr/cm2/album/images/118/75/116/11875116_20250701165641_500.jpg', '{"metadata":{"file":"melon-top10.json","source":"Melon TOP 100 - top 10 songs (via melona)","sourceUrl":"https://www.melon.com/chart/index.htm","fetchedAt":"2026-11-05T18:36:05.910Z","count":10},"item":{"songNo":39231685,"rank":8,"title":"Deja Vu","artist":"RESCENE (리센느)","album":"Dearest","likeCnt":76798,"albumImg":"https://cdnimg.melon.co.kr/cm2/album/images/118/75/116/11875116_20250701165641_500.jpg"}}'
+WHERE NOT EXISTS (SELECT 1 FROM catalog_content WHERE id = 'melon-39231685');
+
+INSERT INTO catalog_content (id, type, title, tag, source_name, source_id, ranking_position, artist, album, channel, image_url, source_json)
+SELECT 'melon-603448999', 'MUSIC', 'Looks Can Kill', 'comfort', 'MELON', '603448999', 9, 'IVE (아이브)', 'Looks Can Kill', NULL, 'https://cdnimg.melon.co.kr/cm2/album/images/148/09/931/14809931_20261026105712_500.jpg', '{"metadata":{"file":"melon-top10.json","source":"Melon TOP 100 - top 10 songs (via melona)","sourceUrl":"https://www.melon.com/chart/index.htm","fetchedAt":"2026-11-05T18:36:05.910Z","count":10},"item":{"songNo":603448999,"rank":9,"title":"Looks Can Kill","artist":"IVE (아이브)","album":"Looks Can Kill","likeCnt":22181,"albumImg":"https://cdnimg.melon.co.kr/cm2/album/images/148/09/931/14809931_20261026105712_500.jpg"}}'
+WHERE NOT EXISTS (SELECT 1 FROM catalog_content WHERE id = 'melon-603448999');
+
+INSERT INTO catalog_content (id, type, title, tag, source_name, source_id, ranking_position, artist, album, channel, image_url, source_json)
+SELECT 'melon-36985781', 'MUSIC', '생각을 멈추다 보면', 'comfort', 'MELON', '36985781', 10, '최유리', '생각을 멈추다 보면', NULL, 'https://cdnimg.melon.co.kr/cm2/album/images/113/69/106/11369106_20231120180538_500.jpg', '{"metadata":{"file":"melon-top10.json","source":"Melon TOP 100 - top 10 songs (via melona)","sourceUrl":"https://www.melon.com/chart/index.htm","fetchedAt":"2026-11-05T18:36:05.910Z","count":10},"item":{"songNo":36985781,"rank":10,"title":"생각을 멈추다 보면","artist":"최유리","album":"생각을 멈추다 보면","likeCnt":61854,"albumImg":"https://cdnimg.melon.co.kr/cm2/album/images/113/69/106/11369106_20231120180538_500.jpg"}}'
+WHERE NOT EXISTS (SELECT 1 FROM catalog_content WHERE id = 'melon-36985781');

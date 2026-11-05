@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: dearseoul
+  profiles:
+    default: dev
+  datasource:
+    url: jdbc:h2:file:${APP_DATA_DIR:./data}/dearseoul;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: ${DB_PASSWORD:}
+  jpa:
+    defer-datasource-initialization: true
+    show-sql: false
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+      continue-on-error: false
+      data-locations:
+        - classpath:db/seed/seodaemun.sql
+        - classpath:db/seed/music.sql
+        - classpath:db/seed/drama.sql
+        - classpath:db/seed/film.sql
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:none}
+  servlet:
+    session:
+      timeout: 30d
+      persistent: true
+      cookie:
+        http-only: true
+        same-site: strict
+app:
+  ai:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-3.1-flash-lite}
+    base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
+    timeout-seconds: ${AI_TIMEOUT_SECONDS:30}

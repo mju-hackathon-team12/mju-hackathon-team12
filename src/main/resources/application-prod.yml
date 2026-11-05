@@ -1,0 +1,27 @@
+spring:
+  main:
+    banner-mode: "off"
+    log-startup-info: false
+
+server:
+  servlet:
+    session:
+      cookie:
+        secure: ${COOKIE_SECURE:true}
+  tomcat:
+    accesslog:
+      enabled: false
+
+logging:
+  level:
+    root: ERROR
+    com.mju.dearseoul: ERROR
+    com.mju.dearseoul.external.api: ERROR
+    org.springframework: ERROR
+    org.springframework.ai: ERROR
+    com.google: ERROR
+    okhttp3: ERROR
+    org.hibernate: ERROR
+    org.hibernate.SQL: "OFF"
+    org.hibernate.orm.jdbc.bind: "OFF"
+    org.hibernate.orm.jdbc.extract: "OFF"

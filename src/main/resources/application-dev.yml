@@ -1,0 +1,17 @@
+server:
+  servlet:
+    session:
+      cookie:
+        secure: ${COOKIE_SECURE:false}
+
+logging:
+  level:
+    root: INFO
+    com.mju.dearseoul: DEBUG
+    com.mju.dearseoul.external.api: DEBUG
+    org.springframework.ai: WARN
+    com.google: WARN
+    okhttp3: WARN
+    org.hibernate.SQL: "OFF"
+    org.hibernate.orm.jdbc.bind: "OFF"
+    org.hibernate.orm.jdbc.extract: "OFF"
