@@ -3,6 +3,8 @@ package com.mju.dearseoul.flow;
 import com.mju.dearseoul.domain.content.dto.ContentType;
 import com.mju.dearseoul.domain.content.repository.CatalogContentRepository;
 import com.mju.dearseoul.domain.content.service.ContentCatalog;
+import com.mju.dearseoul.domain.letter.dto.ExperienceLetterResponse.Content;
+import com.mju.dearseoul.domain.letter.repository.ExperienceLetterRepository;
 import com.mju.dearseoul.domain.place.repository.CatalogPlaceRepository;
 import com.mju.dearseoul.domain.place.service.LetterPlaceCatalog;
 import org.junit.jupiter.api.Test;
@@ -11,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.json.JsonMapper;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,7 +30,42 @@ class CatalogSeedTest {
     private LetterPlaceCatalog placeCatalog;
     @Autowired
     private JdbcTemplate jdbc;
+    @Autowired
+    private ExperienceLetterRepository letters;
     private final JsonMapper json = JsonMapper.builder().build();
+
+    @Test
+    void importsFiftyLettersFromSqlWithValidPlacesAndOrderedContent() {
+        var imported = letters.findAll().stream().filter(letter -> letter.getId().startsWith("dummy-letter-")).toList();
+        assertEquals(50, imported.size());
+        assertEquals(60, letters.count(), "Keep the original ten examples alongside the new fifty");
+        assertEquals(41L, jdbc.queryForObject("select count(*) from experience_letter_content where letter_id like 'dummy-letter-%' and content_type = 'MUSIC'", Long.class));
+        assertEquals(9L, jdbc.queryForObject("select count(*) from experience_letter_content where letter_id like 'dummy-letter-%' and content_type = 'FILM'", Long.class));
+        var tags = Set.of("comfort", "rest", "miss", "youth", "courage");
+        for (var saved : imported) {
+            assertTrue(places.existsById(saved.getPlaceId()), saved.getId());
+            assertTrue(tags.contains(saved.getTag()), saved.getId());
+            assertFalse(saved.getText().isBlank());
+            assertFalse(saved.getRoutine().isBlank());
+            assertEquals(1, saved.getContents().size());
+            assertFalse(saved.isSpoiler());
+            assertTrue(saved.isSample());
+            assertEquals("sample-data", saved.getOwner());
+            assertNotNull(saved.getCreatedAt());
+        }
+        var first = letters.findById("dummy-letter-007").orElseThrow();
+        assertEquals("ansan", first.getPlaceId());
+        assertEquals("아침에 알람 끄고 다시 잘까 하다가 그냥 나왔다. 안산자락길은 처음 가봤는데 생각보다 길이 편해서 다행이었다. 올라가면서 머릿속에 있던 할 일이 자꾸 떠올랐는데 내려올 때쯤엔 좀 잠잠해졌다. 이럴 거면 진작 나올걸.", first.getText());
+        var film = letters.findById("dummy-letter-009").orElseThrow().getContents().get(0);
+        assertEquals(ContentType.FILM, film.getType());
+        assertEquals("리틀 포레스트", film.getTitle());
+        assertEquals(java.util.List.of(
+                new Content(ContentType.DRAMA, "나의 아저씨"),
+                new Content(ContentType.FILM, "리틀 포레스트"),
+                new Content(ContentType.MUSIC, "밤편지")),
+                letters.findById("sample-01").orElseThrow().getContents().stream()
+                        .map(content -> new Content(content.getType(), content.getTitle())).toList());
+    }
 
     @Test
     void importsAllFourSnapshotsAndKeepsOriginalMetadata() {

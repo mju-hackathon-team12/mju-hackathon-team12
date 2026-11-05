@@ -1,5 +1,5 @@
 /* Same-origin server API. Credentials stay on the server. */
-const API = (() => {
+export const API = (() => {
   async function request(path, body) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 40000);

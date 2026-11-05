@@ -36,6 +36,10 @@ class FilePersistenceTest {
             assertEquals(30, first.getBean(CatalogContentRepository.class).count());
             assertEquals(161, first.getBean(CatalogPlaceRepository.class).countBySourceName("TOURAPI"));
             first.getBean(JdbcTemplate.class).update("update catalog_content set title = ? where id = ?", "운영자가 수정한 제목", "melon-603382333");
+            first.getBean(JdbcTemplate.class).update("update experience_letter set letter_text = ? where id = ?",
+                    "운영자가 수정한 레터", "dummy-letter-007");
+            first.getBean(JdbcTemplate.class).update("update experience_letter_content set content_title = ? where letter_id = ? and content_order = 0",
+                    "운영자가 수정한 작품", "dummy-letter-007");
             var reviewed = first.getBean(LetterReviewRepository.class).save(new LetterReview("owner-a", "새 워크플로우의 레터", ContentType.MUSIC,
                     "밤편지", "comfort", false, "sample-01", List.of("falls")));
             experienceId = first.getBean(ExperienceLetterWriteService.class).save("owner-a",
@@ -51,7 +55,12 @@ class FilePersistenceTest {
             assertEquals("sample-01", experience.sourceLetterId());
             assertEquals(ContentType.MUSIC, experience.contents().get(0).type());
             assertFalse(experience.mine());
-            assertEquals(11, second.getBean(ExperienceLetterRepository.class).count(), "Sample initialization must not duplicate rows on restart");
+            var seeded = second.getBean(ExperienceLetterQueryService.class).get("dummy-letter-007", "owner-b");
+            assertEquals("운영자가 수정한 레터", seeded.text(), "SQL seeds must preserve edited letter text");
+            assertEquals("운영자가 수정한 작품", seeded.contents().get(0).title(), "SQL seeds must preserve edited content");
+            assertEquals(61, second.getBean(ExperienceLetterRepository.class).count(), "SQL seeds must not duplicate letters on restart");
+            assertEquals(81L, second.getBean(JdbcTemplate.class).queryForObject(
+                    "select count(*) from experience_letter_content", Long.class), "SQL seeds must not duplicate letter contents on restart");
         }
     }
 }

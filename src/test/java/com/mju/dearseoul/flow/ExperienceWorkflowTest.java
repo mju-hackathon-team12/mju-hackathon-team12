@@ -5,6 +5,7 @@ import com.mju.dearseoul.domain.letter.service.LetterReviewService;
 import com.mju.dearseoul.domain.letter.service.ExperienceLetterQueryService;
 import com.mju.dearseoul.domain.letter.entity.ExperienceLetter;
 import com.mju.dearseoul.domain.letter.repository.ExperienceLetterRepository;
+import com.mju.dearseoul.domain.letter.repository.LetterReviewRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,9 @@ class ExperienceWorkflowTest {
     @Autowired
     private ExperienceLetterQueryService letterQueries;
 
+    @Autowired
+    private LetterReviewRepository reviewRepository;
+
     private final JsonMapper json = JsonMapper.builder().build();
 
     @BeforeEach
@@ -51,6 +55,7 @@ class ExperienceWorkflowTest {
         ai.invalidIds.set(false);
         ai.calls.set(0);
         ai.lastCandidates.set(null);
+        ai.reviewDecision.set(null);
     }
 
     private HttpClient browser() throws Exception {
@@ -84,6 +89,23 @@ class ExperienceWorkflowTest {
         var response = post(browser, "/api/preferences", preference(district));
         assertEquals(200, response.statusCode(), response.body());
         return body(response).path("preferenceId").asString();
+    }
+
+    @Test
+    void developmentH2ConsoleIsReachableAndOnlyItsFramesAreAllowed() throws Exception {
+        var client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+        var console = get(client, "/h2-console/");
+        assertEquals(200, console.statusCode(), console.body());
+        // H2's landing page redirects with JavaScript rather than an HTTP Location header.
+        var redirect = java.util.regex.Pattern.compile("location\\.href = '(login\\.jsp\\?jsessionid=[^']+)'").matcher(console.body());
+        assertTrue(redirect.find(), console.body());
+        var login = get(client, "/h2-console/" + redirect.group(1));
+        assertEquals(200, login.statusCode(), login.body());
+        assertTrue(login.body().contains("name=\"url\""), login.body());
+        assertEquals("SAMEORIGIN", login.headers().firstValue("X-Frame-Options").orElseThrow());
+        assertEquals("SAMEORIGIN", console.headers().firstValue("X-Frame-Options").orElseThrow());
+        assertEquals("DENY", get(client, "/api/health").headers().firstValue("X-Frame-Options").orElseThrow());
+        assertEquals("DENY", get(client, "/h2-console-other").headers().firstValue("X-Frame-Options").orElseThrow());
     }
 
     @Test
@@ -121,6 +143,27 @@ class ExperienceWorkflowTest {
             assertTrue(candidates.stream().anyMatch(letter -> letter.id().equals("sample-01")));
         } finally {
             letterRepository.deleteAll(seen);
+        }
+    }
+
+    @Test
+    void moreThanOneHundredRecentLettersAtOneMailboxDoNotHideOtherMailboxes() {
+        List<ExperienceLetter> popular = new ArrayList<>();
+        for (int i = 0; i < 105; i++) {
+            popular.add(new ExperienceLetter("popular-" + UUID.randomUUID(), "another-owner", null, null,
+                    "falls", "새로 올라온 산책 이야기", "comfort", false, false, null, "", List.of()));
+        }
+        letterRepository.saveAllAndFlush(popular);
+        try {
+            var candidates = letterQueries.candidates("visitor", "서대문구", Set.of());
+            assertTrue(candidates.stream().map(letter -> letter.placeId()).distinct().count() >= 3,
+                    "Older letters at other mailboxes must remain eligible");
+            assertEquals(10, candidates.stream().filter(letter -> letter.placeId().equals("falls")).count(),
+                    "Bound candidates per mailbox instead of limiting the whole result to 100");
+            assertTrue(candidates.stream().anyMatch(letter -> letter.id().equals("sample-02")));
+            assertTrue(letterQueries.candidates("visitor", "강남구", Set.of()).isEmpty());
+        } finally {
+            letterRepository.deleteAll(popular);
         }
     }
 
@@ -202,9 +245,12 @@ class ExperienceWorkflowTest {
         var author = browser();
         var visitor = browser();
         String text = "나만의 이야기를 남기는 날 " + UUID.randomUUID();
-        var review = post(author, "/api/letters/review", Map.of("text", text, "work", "밤편지", "cat", "music", "placeId", "falls"));
+        String work = "나만의 작품 " + UUID.randomUUID();
+        var review = post(author, "/api/letters/review", Map.of("text", text, "work", work, "cat", "music", "placeId", "falls"));
         assertEquals(200, review.statusCode(), review.body());
         String reviewId = body(review).path("reviewId").asString();
+        assertFalse(body(review).path("corrected").asBoolean());
+        assertEquals(text, body(review).path("text").asString());
         var request = Map.of("requestId", UUID.randomUUID().toString(), "reviewId", reviewId, "placeId", "falls");
         assertEquals(404, post(visitor, "/api/letters", request).statusCode());
         assertEquals(400, post(author, "/api/letters", Map.of("requestId", UUID.randomUUID().toString(), "reviewId", reviewId, "placeId", "film")).statusCode());
@@ -224,15 +270,88 @@ class ExperienceWorkflowTest {
         var recommended = post(author, "/api/recommendations", Map.of("preferenceId", preferenceId));
         assertEquals(200, recommended.statusCode());
         for (var item : body(recommended).path("letters")) assertNotEquals(id, item.path("letter").path("id").asString());
-        String visitorPreference = createPreference(visitor, "서울 전체");
+        // Explicit affinity keeps this letter in the 30-item shortlist even as seed data grows.
+        var visitorTaste = post(visitor, "/api/preferences", Map.of("ratings", List.of(
+                Map.of("title", work, "cat", "music", "score", 5),
+                Map.of("title", "중립 영화", "cat", "film", "score", 3),
+                Map.of("title", "중립 드라마", "cat", "drama", "score", 3)), "gu", "서울 전체"));
+        assertEquals(200, visitorTaste.statusCode(), visitorTaste.body());
+        String visitorPreference = body(visitorTaste).path("preferenceId").asString();
         assertEquals(200, post(visitor, "/api/recommendations", Map.of("preferenceId", visitorPreference)).statusCode());
         assertTrue(ai.lastCandidates.get().candidates().stream().anyMatch(candidate -> candidate.id().equals(id)));
     }
 
     @Test
+    void contactsReturnInputErrorsWithoutCallingAiOrCreatingReviews() throws Exception {
+        var browser = browser();
+        long before = reviewRepository.count();
+        for (String contact : List.of("010-1234-5678", "+82 10 1234 5678", "02-123-4567", "hello@example.com")) {
+            var response = post(browser, "/api/letters/review", Map.of("text", "산책 후 연락: " + contact));
+            assertEquals(400, response.statusCode(), response.body());
+            assertEquals("INVALID_INPUT", body(response).path("code").asString());
+        }
+        var workContact = post(browser, "/api/letters/review", Map.of("text", "산책이 좋았어요.", "work", "hello@example.com", "cat", "music"));
+        assertEquals(400, workContact.statusCode());
+        assertEquals(0, ai.calls.get());
+        assertEquals(before, reviewRepository.count());
+    }
+
+    @Test
+    void minorIssuesAreCorrectedAndOnlyTheReviewedTextIsPersisted() throws Exception {
+        var browser = browser();
+        String original = "씨발 힘든 하루였어요. 그래도 내일도 걷고 싶어요.";
+        String approved = "정말 힘든 하루였어요. 그래도 내일도 걷고 싶어요.";
+        ai.reviewDecision.set(new LetterReviewService.Decision(false, false, "거친 표현만 순화했어요.", "rest",
+                List.of(new LetterReviewService.PlaceSuggestion("falls", "산책하기 좋아요."),
+                        new LetterReviewService.PlaceSuggestion("ansan", "쉬어가기 좋아요.")),
+                approved));
+        var review = post(browser, "/api/letters/review", Map.of("text", original, "placeId", "falls"));
+        assertEquals(200, review.statusCode(), review.body());
+        assertFalse(body(review).path("block").asBoolean());
+        assertTrue(body(review).path("corrected").asBoolean());
+        assertEquals(approved, body(review).path("text").asString());
+        String reviewId = body(review).path("reviewId").asString();
+        assertEquals(approved, reviewRepository.findById(reviewId).orElseThrow().getText());
+        var request = Map.of("requestId", UUID.randomUUID().toString(), "reviewId", reviewId, "placeId", "falls");
+        var saved = post(browser, "/api/letters", request);
+        assertEquals(200, saved.statusCode(), saved.body());
+        assertEquals(approved, body(saved).path("text").asString());
+        assertEquals(approved, letterRepository.findById(body(saved).path("id").asString()).orElseThrow().getText());
+        assertEquals(body(saved).path("id").asString(), body(post(browser, "/api/letters", request)).path("id").asString());
+    }
+
+    @Test
+    void fullLetterReplacementIsAlsoSavableAfterProfanityReview() throws Exception {
+        var browser = browser();
+        String original = "씨발";
+        String approved = "정말 힘든 마음이에요.";
+        ai.reviewDecision.set(new LetterReviewService.Decision(false, false, "욕설을 순화했어요.", "comfort",
+                List.of(new LetterReviewService.PlaceSuggestion("falls", "쉬어가기 좋아요."),
+                        new LetterReviewService.PlaceSuggestion("ansan", "걷기 좋아요.")),
+                approved));
+        var review = post(browser, "/api/letters/review", Map.of("text", original, "placeId", "falls"));
+        assertEquals(200, review.statusCode(), review.body());
+        assertTrue(body(review).path("corrected").asBoolean());
+        assertEquals(approved, body(review).path("text").asString());
+        var saved = post(browser, "/api/letters", Map.of("requestId", UUID.randomUUID().toString(),
+                "reviewId", body(review).path("reviewId").asString(), "placeId", "falls"));
+        assertEquals(200, saved.statusCode(), saved.body());
+        assertEquals(approved, body(saved).path("text").asString());
+    }
+
+    @Test
     void blockedContentCannotCreateAReviewAndFollowedLettersKeepTheirSource() throws Exception {
         var browser = browser();
-        assertEquals(400, post(browser, "/api/letters/review", Map.of("text", "연락처 010-1234-5678")).statusCode());
+        long before = reviewRepository.count();
+        ai.reviewDecision.set(new LetterReviewService.Decision(true, false, "위협하는 내용은 저장할 수 없어요.", "comfort", List.of(), null));
+        var blocked = post(browser, "/api/letters/review", Map.of("text", "내일 찾아가서 너를 죽여 버리겠다."));
+        assertEquals(200, blocked.statusCode(), blocked.body());
+        assertTrue(body(blocked).path("block").asBoolean());
+        assertTrue(body(blocked).path("reviewId").isNull());
+        assertTrue(body(blocked).path("text").isNull());
+        assertEquals(before, reviewRepository.count());
+        assertEquals(400, post(browser, "/api/letters", Map.of("requestId", UUID.randomUUID().toString(), "placeId", "falls")).statusCode());
+        ai.reviewDecision.set(null);
         var review = post(browser, "/api/letters/review", Map.of("text", "다른 사람의 산책을 따라 걸었어요.", "sourceLetterId", "sample-01", "placeId", "ansan"));
         assertEquals(200, review.statusCode(), review.body());
         var saved = post(browser, "/api/letters", Map.of("requestId", UUID.randomUUID().toString(),
@@ -255,6 +374,7 @@ class ExperienceWorkflowTest {
         final AtomicBoolean invalidIds = new AtomicBoolean();
         final AtomicInteger calls = new AtomicInteger();
         final AtomicReference<LetterRecommendationService.Input> lastCandidates = new AtomicReference<>();
+        final AtomicReference<LetterReviewService.Decision> reviewDecision = new AtomicReference<>();
 
         @Override
         public <T> T generateJson(String operation, String instructions, Object input, Class<T> responseType, UnaryOperator<T> validator) {
@@ -267,8 +387,8 @@ class ExperienceWorkflowTest {
                         .map(candidate -> new LetterRecommendationService.Pick(invalidIds.get() ? "not-a-real-letter" : candidate.id(), "선호한 작품의 정서와 어울리는 이야기예요.")).toList();
                 result = new LetterRecommendationService.Decision(selected);
             } else if (input instanceof LetterReviewService.Input review) {
-                result = new LetterReviewService.Decision(false, false, "레터를 확인했어요.", "comfort",
-                        review.candidates().stream().limit(2).map(place -> new LetterReviewService.PlaceSuggestion(place.id(), "편안히 머무르기 좋은 곳이에요.")).toList());
+                result = reviewDecision.get() != null ? reviewDecision.get() : new LetterReviewService.Decision(false, false, "레터를 확인했어요.", "comfort",
+                        review.candidates().stream().limit(2).map(place -> new LetterReviewService.PlaceSuggestion(place.id(), "편안히 머무르기 좋은 곳이에요.")).toList(), review.text());
             } else {
                 throw new IllegalArgumentException("Unexpected test AI operation");
             }

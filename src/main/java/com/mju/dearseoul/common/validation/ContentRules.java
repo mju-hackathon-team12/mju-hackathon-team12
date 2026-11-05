@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 public final class ContentRules {
     private ContentRules() {}
     private static final Pattern CONTACT = Pattern.compile(
-            "(?i)(https?://|www\\.|[\\w.+-]+@[\\w.-]+\\.[a-z]{2,}|(?:\\+82[- .]?)?0?1[016789][- .]?\\d{3,4}[- .]?\\d{4}|\\d{6}[- ]?[1-4]\\d{6})");
+            "(?i)(https?://|www\\.|[\\w.+-]+@[\\w.-]+\\.[a-z]{2,}|(?:\\+82[- .]?0?|0)(?:1[016789]|2|[3-6][1-5]|70)[- .]?\\d{3,4}[- .]?\\d{4}|\\d{6}[- ]?[1-4]\\d{6})");
     private static final List<String> BLOCKED = List.of("죽어", "죽여", "병신", "씨발");
 
     public static String text(String value, String label, int max) {
@@ -24,10 +24,18 @@ public final class ContentRules {
         return clean;
     }
 
-    public static String publicText(String value, String label, int max) {
+    public static String withoutContact(String value, String label, int max) {
         String clean = text(value, label, max);
+        if (CONTACT.matcher(clean).find()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "전화번호·이메일·연락처·개인정보를 지우고 다시 작성해주세요.");
+        }
+        return clean;
+    }
+
+    public static String publicText(String value, String label, int max) {
+        String clean = withoutContact(value, label, max);
         String compact = clean.replaceAll("\\s", "");
-        if (CONTACT.matcher(clean).find() || BLOCKED.stream().anyMatch(compact::contains)) {
+        if (BLOCKED.stream().anyMatch(compact::contains)) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "연락처·개인정보·상처가 되는 표현을 지우고 다시 작성해주세요.");
         }
         return clean;

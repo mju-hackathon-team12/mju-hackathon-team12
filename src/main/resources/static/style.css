@@ -33,6 +33,8 @@ h1{font:600 clamp(24px,2.8vw,30px)/1.25 var(--hand);letter-spacing:-.01em;text-w
 .text:focus-visible{outline:2px dashed var(--tint)}
 .row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
 .center{position:absolute;inset:0;display:grid;place-items:center;padding:60px 20px 40px}
+.review-result{align-items:start;overflow-y:auto;pointer-events:auto;padding-top:84px}
+.review-result .pen{white-space:pre-wrap;overflow-wrap:anywhere}
 .sheet{width:min(430px,100%);padding:26px 28px;display:grid;gap:14px;pointer-events:auto;animation:in .5s ease both}
 @keyframes in{from{transform:translateY(16px) rotate(-.6deg);opacity:0}to{transform:none;opacity:1}}
 .line{width:100%;border:0;border-bottom:2px dotted var(--pencil);background:none;padding:4px 0;border-radius:0;outline-offset:2px}

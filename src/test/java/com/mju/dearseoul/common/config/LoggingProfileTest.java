@@ -27,6 +27,8 @@ class LoggingProfileTest {
             assertFalse(LoggerFactory.getLogger("org.springframework.ai").isDebugEnabled());
             assertFalse(LoggerFactory.getLogger("okhttp3").isDebugEnabled());
             assertFalse(LoggerFactory.getLogger("org.hibernate.SQL").isErrorEnabled());
+            assertEquals("true", context.getEnvironment().getProperty("spring.h2.console.enabled"));
+            assertEquals("false", context.getEnvironment().getProperty("spring.h2.console.settings.web-allow-others"));
         }
     }
 
@@ -43,6 +45,7 @@ class LoggingProfileTest {
             assertFalse(LoggerFactory.getLogger("org.springframework.ai").isWarnEnabled());
             assertFalse(LoggerFactory.getLogger("com.google").isWarnEnabled());
             assertFalse(LoggerFactory.getLogger("org.hibernate.SQL").isErrorEnabled());
+            assertEquals("false", context.getEnvironment().getProperty("spring.h2.console.enabled"));
         }
     }
 

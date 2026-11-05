@@ -21,10 +21,16 @@ public class AnonymousFilter extends OncePerRequestFilter {
     private final SecureRandom random = new SecureRandom();
     private final boolean secure;
     private final JsonMapper jsonMapper;
+    private final boolean consoleEnabled;
+    private final String consolePath;
 
-    public AnonymousFilter(@Value("${server.servlet.session.cookie.secure:false}") boolean secure, JsonMapper jsonMapper) {
+    public AnonymousFilter(@Value("${server.servlet.session.cookie.secure:false}") boolean secure, JsonMapper jsonMapper,
+                           @Value("${spring.h2.console.enabled:false}") boolean consoleEnabled,
+                           @Value("${spring.h2.console.path:/h2-console}") String consolePath) {
         this.secure = secure;
         this.jsonMapper = jsonMapper;
+        this.consoleEnabled = consoleEnabled;
+        this.consolePath = consolePath;
     }
 
     @Override
@@ -32,8 +38,10 @@ public class AnonymousFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         response.setHeader("X-Content-Type-Options", "nosniff");
         response.setHeader("Referrer-Policy", "same-origin");
-        response.setHeader("X-Frame-Options", "DENY");
-        if (!request.getRequestURI().startsWith("/api/")) { chain.doFilter(request, response); return; }
+        String path = request.getRequestURI().substring(request.getContextPath().length());
+        boolean consoleRequest = consoleEnabled && (path.equals(consolePath) || path.startsWith(consolePath + "/"));
+        response.setHeader("X-Frame-Options", consoleRequest ? "SAMEORIGIN" : "DENY");
+        if (!path.startsWith("/api/")) { chain.doFilter(request, response); return; }
         response.setHeader("Cache-Control", "no-store");
         if (!Set.of("GET", "HEAD", "OPTIONS").contains(request.getMethod())) {
             String origin = request.getHeader("Origin");
